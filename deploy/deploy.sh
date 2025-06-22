@@ -90,7 +90,6 @@ start_local() {
     log_success "Local development environment started!"
     log_info "Game available at: http://localhost:8080"
 }
-}
 
 # Stop local development environment
 stop_local() {

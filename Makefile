@@ -25,10 +25,13 @@ build: ## Build Docker image
 	./deploy/deploy.sh build
 
 docker: ## Deploy with Docker Compose
-	./deploy/deploy.sh docker
+	./deploy/deploy.sh up
 
-k8s: ## Deploy to Kubernetes
-	./deploy/deploy.sh k8s
+docker-run: ## Start Docker containers
+	./deploy/deploy.sh up
+
+docker-stop: ## Stop Docker containers
+	./deploy/deploy.sh down
 
 status: ## Show deployment status
 	./deploy/deploy.sh status
@@ -68,23 +71,9 @@ release: ## Create a new release (bump version, build, deploy)
 
 # Docker shortcuts
 docker-build: build ## Alias for build
-docker-run: docker ## Alias for docker
-docker-stop: ## Stop Docker containers
-	cd deploy && docker-compose down
 
 docker-logs: ## Show Docker logs
-	cd deploy && docker-compose logs -f
-
-# Kubernetes shortcuts
-k8s-deploy: k8s ## Alias for k8s
-k8s-status: ## Show Kubernetes status
-	kubectl get pods,svc,ingress -l app=geometry-jump
-
-k8s-logs: ## Show Kubernetes logs
-	kubectl logs -f deployment/geometry-jump
-
-k8s-delete: ## Delete Kubernetes deployment
-	cd deploy && kubectl delete -f k8s-deployment.yaml
+	./deploy/deploy.sh logs
 
 # Utility commands
 open: ## Open game in browser
@@ -123,5 +112,4 @@ info: ## Show project information
 	@echo "Quick commands:"
 	@echo "  make start     - Start development"
 	@echo "  make docker    - Deploy with Docker"
-	@echo "  make k8s       - Deploy to Kubernetes"
 	@echo "  make status    - Check deployment status"
