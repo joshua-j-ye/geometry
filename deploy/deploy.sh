@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Geometry Jump Deployment Script
-# This script helps deploy the game using Docker or Kubernetes
+# Geometry Jump Local Development Script
+# This script helps run the game locally using Docker Compose
 
 set -e
 
@@ -36,23 +36,24 @@ log_error() {
 # Help function
 show_help() {
     cat << EOF
-Geometry Jump Deployment Script
+Geometry Jump Local Development Script
 
 Usage: $0 [OPTION]
 
 Options:
-    docker          Deploy using Docker Compose
-    k8s            Deploy to Kubernetes
-    build          Build Docker image only
-    clean          Clean up Docker resources
+    build          Build Docker image
+    up             Start local development environment
+    down           Stop local development environment
     logs           Show application logs
     status         Show deployment status
+    clean          Clean up Docker resources
     help           Show this help message
 
 Examples:
-    $0 docker      # Deploy with Docker Compose
-    $0 k8s         # Deploy to Kubernetes
     $0 build       # Build Docker image
+    $0 up          # Start local development
+    $0 down        # Stop local development
+    $0 logs        # Show logs
     $0 clean       # Clean up resources
 
 EOF
@@ -61,70 +62,45 @@ EOF
 # Build Docker image
 build_image() {
     log_info "Building Geometry Jump Docker image..."
-    
+
     # Get version from package.json
     VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "latest")
     export VERSION
-    
+
     # Build with version
     cd deploy
     docker build --build-arg VERSION="$VERSION" -t geometry-jump:"$VERSION" -t geometry-jump:latest -f Dockerfile ..
     cd ..
-    
+
     log_success "Docker image built successfully! Version: $VERSION"
 }
 
-# Docker deployment
-deploy_docker() {
-    log_info "Deploying Geometry Jump with Docker Compose..."
-    
-    # Create network if it doesn't exist
-    if ! docker network ls | grep -q traefik-network; then
-        log_info "Creating traefik-network..."
-        docker network create traefik-network
-    fi
-    
+# Start local development environment
+start_local() {
+    log_info "Starting Geometry Jump local development environment..."
+
     # Create logs directory
     mkdir -p logs
-    
-    # Deploy with docker-compose
+
+    # Start with docker-compose
     cd deploy
     VERSION=${VERSION:-$(node -p "require('../package.json').version" 2>/dev/null || echo "latest")} docker-compose up -d
     cd ..
-    
-    log_success "Deployment complete!"
-    log_info "Game available at:"
-    log_info "  - Direct access: http://localhost:8080"
-    log_info "  - Via Traefik: http://geometry.local (if DNS configured)"
-    log_info "  - Traefik dashboard: http://localhost:8090"
+
+    log_success "Local development environment started!"
+    log_info "Game available at: http://localhost:8080"
+}
 }
 
-# Kubernetes deployment
-deploy_k8s() {
-    log_info "Deploying Geometry Jump to Kubernetes..."
-    
-    # Check if kubectl is available
-    if ! command -v kubectl &> /dev/null; then
-        log_error "kubectl is not installed or not in PATH"
-        exit 1
-    fi
-    
-    # Build image first
-    build_image
-    
-    # Apply Kubernetes manifests
-    log_info "Applying Kubernetes manifests..."
+# Stop local development environment
+stop_local() {
+    log_info "Stopping Geometry Jump local development environment..."
+
     cd deploy
-    kubectl apply -f k8s-deployment.yaml
-    kubectl apply -f k8s-traefik-middleware.yaml
+    docker-compose down
     cd ..
-    
-    # Wait for deployment
-    log_info "Waiting for deployment to be ready..."
-    kubectl wait --for=condition=available --timeout=300s deployment/geometry-jump
-    
-    log_success "Kubernetes deployment complete!"
-    log_info "Check status with: kubectl get pods,svc,ingress"
+
+    log_success "Local development environment stopped!"
 }
 
 # Show logs
@@ -133,36 +109,27 @@ show_logs() {
     if docker-compose ps | grep -q geometry-jump-game; then
         log_info "Showing Docker logs..."
         docker-compose logs -f geometry-jump
-    elif kubectl get pods | grep -q geometry-jump; then
-        log_info "Showing Kubernetes logs..."
-        kubectl logs -f deployment/geometry-jump
     else
         log_warning "No running deployment found"
+        log_info "Start the local environment with: $0 up"
     fi
     cd ..
 }
 
 # Show status
 show_status() {
-    log_info "=== Docker Status ==="
+    log_info "=== Local Development Status ==="
     cd deploy
     if docker-compose ps | grep -q geometry-jump-game; then
         docker-compose ps
         echo
         log_info "Game URL: http://localhost:8080"
     else
-        log_warning "Docker deployment not running"
+        log_warning "Local development environment not running"
+        log_info "Start with: $0 up"
     fi
     cd ..
-    
-    echo
-    log_info "=== Kubernetes Status ==="
-    if kubectl get pods 2>/dev/null | grep -q geometry-jump; then
-        kubectl get pods,svc,ingress -l app=geometry-jump
-    else
-        log_warning "Kubernetes deployment not found"
-    fi
-    
+
     # Show version info
     echo
     log_info "=== Version Info ==="
@@ -172,8 +139,8 @@ show_status() {
 
 # Clean up
 clean_up() {
-    log_info "Cleaning up Geometry Jump resources..."
-    
+    log_info "Cleaning up Geometry Jump local development resources..."
+
     # Docker cleanup
     cd deploy
     if docker-compose ps | grep -q geometry-jump-game; then
@@ -181,38 +148,29 @@ clean_up() {
         log_success "Docker containers stopped"
     fi
     cd ..
-    
-    # Kubernetes cleanup
-    if kubectl get deployment geometry-jump 2>/dev/null; then
-        cd deploy
-        kubectl delete -f k8s-deployment.yaml
-        kubectl delete -f k8s-traefik-middleware.yaml
-        cd ..
-        log_success "Kubernetes resources deleted"
-    fi
-    
-    # Optional: Remove Docker image
-    read -p "Remove Docker image? (y/N): " -n 1 -r
+
+    # Optional: Remove Docker images
+    read -p "Remove Docker images? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker rmi geometry-jump:latest 2>/dev/null || true
         VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "latest")
         docker rmi geometry-jump:"$VERSION" 2>/dev/null || true
+        docker rmi geometry-jump:latest 2>/dev/null || true
+        docker rmi nginx:alpine 2>/dev/null || true
         log_success "Docker images removed"
     fi
 }
 
 # Main script logic
 case "${1:-help}" in
-    docker)
-        build_image
-        deploy_docker
-        ;;
-    k8s)
-        deploy_k8s
-        ;;
     build)
         build_image
+        ;;
+    up)
+        start_local
+        ;;
+    down)
+        stop_local
         ;;
     logs)
         show_logs

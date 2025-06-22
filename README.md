@@ -1,6 +1,33 @@
 # Geometry Jump 🎮
 
-[![Build and Deploy](https://github.com/joshua-j-ye/geometry/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/joshua-j-ye/geometry/actions/workflows/build-and-deploy.yml)
+[![Build and Deploy](https://github.com/jos## 🔄 Automated CI/CD
+
+The project includes a GitHub Actions workflow that automatically:
+
+1. **🧪 Tests**: Validates HTML/CSS/JS syntax
+2. **📈 Versions**: Auto-bumps version numbers
+3. **📦 Builds**: Creates Docker image with version tag
+4. **🚀 Publishes**: Pushes to GitHub Container Registry
+5. **📋 Releases**: Creates GitHub releases automatically
+6. **🔄 Updates**: Updates deployment files
+
+### Trigger Automated Build
+Push changes to the `main` branch in `src/`, `deploy/`, or `package.json`:
+
+```bash
+git add src/
+git commit -m "✨ Add new game feature"
+git push origin main
+```
+
+### Using Published Images
+```bash
+# Pull latest image
+docker pull ghcr.io/joshua-j-ye/geometry/geometry-jump:latest
+
+# Run specific version
+docker run -p 8080:80 ghcr.io/joshua-j-ye/geometry/geometry-jump:v1.0.1
+```/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/joshua-j-ye/geometry/actions/workflows/build-and-deploy.yml)
 [![Docker Image](https://ghcr.io/joshua-j-ye/geometry/geometry-jump:latest)](https://ghcr.io/joshua-j-ye/geometry/geometry-jump)
 
 A simple and fun Geometry Dash-style game built with HTML, CSS, and JavaScript for Joshua and Dad!
@@ -17,18 +44,13 @@ npm install
 npm start
 ```
 
-### Deploy with Docker
+### Deploy for Local Development
 ```bash
-# Build and run
-./deploy/deploy.sh docker
+# Build and start local development environment
+./deploy/deploy.sh build
+./deploy/deploy.sh up
 
 # Access at http://localhost:8080
-```
-
-### Deploy to Kubernetes
-```bash
-# Deploy to K8s with Traefik
-./deploy/deploy.sh k8s
 ```
 
 ## 📁 Project Structure
@@ -40,11 +62,12 @@ geometry-jump/
 │   ├── style.css          # Game styling
 │   └── game.js            # Game logic
 ├── deploy/                # Deployment files
-│   ├── Dockerfile         # Container definition
+│   ├── Dockerfile         # Docker image definition
 │   ├── docker-compose.yml # Docker Compose setup
-│   ├── k8s-*.yaml        # Kubernetes manifests
 │   ├── nginx.conf         # Web server config
-│   └── deploy.sh          # Deployment script
+│   ├── deploy.sh          # Deployment script
+│   ├── logs/              # Application logs
+│   └── letsencrypt/       # SSL certificates
 ├── docs/                  # Documentation
 │   ├── README.md          # Game documentation
 │   ├── DEVELOPMENT_LOG.md # Development history
@@ -65,24 +88,23 @@ geometry-jump/
 - **Mobile Friendly**: Responsive design for all devices
 - **Version Display**: Shows current game version
 
-## 🔄 Automated CI/CD
+## 🔄 Local Development
 
-The project includes a GitHub Actions workflow that:
+The project includes a simple local development setup:
 
-1. **🧪 Tests**: Validates HTML/CSS/JS syntax
-2. **📦 Builds**: Creates Docker image with version tag
-3. **🚀 Deploys**: Publishes to GitHub Container Registry
-4. **📋 Releases**: Creates GitHub releases automatically
-5. **🔄 Updates**: Bumps version numbers automatically
+1. **📂 Direct**: Open `src/index.html` in your browser
+2. **� Docker**: Use Docker Compose for containerized development
+3. **� Live Editing**: Files are served directly from source directory
+4. **� Monitoring**: Built-in Traefik dashboard and health checks
 
-### Trigger Deployment
-Just push changes to the `main` branch in the `src/` or `deploy/` directories!
+### Start Local Development
+Just run the deployment script:
 
 ```bash
-git add src/
-git commit -m "✨ Add new game feature"
-git push origin main
+./deploy/deploy.sh up
 ```
+
+Access the game at http://localhost:8080 or http://geometry.local (with DNS setup).
 
 ## 🏗️ Development Workflow
 
@@ -113,13 +135,16 @@ npm run version:patch
 npm run version:minor
 ```
 
-### Deployment Commands
+### Local Development Commands
 ```bash
-# Docker deployment
-./deploy/deploy.sh docker
+# Build Docker image
+./deploy/deploy.sh build
 
-# Kubernetes deployment
-./deploy/deploy.sh k8s
+# Start local development
+./deploy/deploy.sh up
+
+# Stop local development
+./deploy/deploy.sh down
 
 # Check status
 ./deploy/deploy.sh status
@@ -131,36 +156,46 @@ npm run version:minor
 ./deploy/deploy.sh clean
 ```
 
+# Clean up
+./deploy/deploy.sh clean
+```
+
 ## 🐳 Docker Images
 
 Images are automatically built and published to GitHub Container Registry:
 
 ```bash
-# Pull latest
+# Pull latest image
 docker pull ghcr.io/joshua-j-ye/geometry/geometry-jump:latest
 
 # Run specific version
 docker run -p 8080:80 ghcr.io/joshua-j-ye/geometry/geometry-jump:v1.0.1
+
+# Build locally
+./deploy/deploy.sh build
 ```
 
-## 📊 Monitoring
+## 📊 Monitoring & Development
 
-### Health Checks
-- Container health endpoint: `/health`
-- Version information: `/version.json`
-- Application logs via Docker/Kubernetes
+### Local Development Features
+- Docker image building with versioning
+- Container health checks at `/health`
+- Version information at `/version.json`
+- Application logs in `deploy/logs/`
+- Simple direct access via localhost
 
 ### Performance
 - Nginx with gzip compression
 - Static asset caching
-- Minimal resource usage (64Mi RAM)
+- Optimized Docker image
+- Fast startup times
 
 ## 🛡️ Security Features
 
 - Security headers (XSS, CSRF protection)
-- HTTPS with automatic certificates
-- Read-only filesystem
-- Non-root container execution
+- Isolated Docker network
+- Health check endpoints
+- Read-only file serving
 
 ## 🎯 Future Enhancements
 
@@ -177,9 +212,9 @@ docker run -p 8080:80 ghcr.io/joshua-j-ye/geometry/geometry-jump:v1.0.1
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes in `src/`
-4. Test locally with `npm start`
-5. Push to trigger automatic build
-6. Create a pull request
+4. Test locally with `./deploy/deploy.sh build && ./deploy/deploy.sh up`
+5. Push to trigger automatic build and publish
+6. Submit a pull request
 
 ## 📄 License
 

@@ -215,11 +215,8 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Update Kubernetes deployment
+    - name: Update docker-compose version
       run: |
-        # Update image tag in k8s deployment
-        sed -i "s|image: geometry-jump:.*|image: ${{ needs.build-and-push.outputs.image }}|g" deploy/k8s-deployment.yaml
-
         # Update docker-compose default version
         sed -i "s|VERSION:-latest|VERSION:-${{ needs.build-and-push.outputs.version }}|g" deploy/docker-compose.yml
 
@@ -227,10 +224,10 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add deploy/
+        git add deploy/docker-compose.yml
         if git diff --staged --quiet; then
           echo "No deployment changes to commit"
         else
-          git commit -m "📦 Update deployment files for v${{ needs.build-and-push.outputs.version }}"
+          git commit -m "📦 Update docker-compose for v${{ needs.build-and-push.outputs.version }}"
           echo "Deployment files updated locally (skipping push to avoid conflicts)"
         fi
