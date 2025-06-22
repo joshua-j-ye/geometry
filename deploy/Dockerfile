@@ -9,29 +9,20 @@ ARG VERSION=latest
 ARG CACHEBUST=1
 ENV APP_VERSION=${VERSION}
 
-# Copy custom nginx configuration first (changes less frequently)
+# Copy custom nginx configuration
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 
-# Copy documentation (changes less frequently)
+# Copy documentation
 COPY docs/README.md /usr/share/nginx/html/
 
-# Add a layer that changes every build to bust cache for source files
+# Cache bust to ensure fresh files
 RUN echo "Cache bust: ${CACHEBUST}" > /tmp/cachebust
 
-# Copy game files to nginx html directory
-# These should be copied last as they change most frequently
-# Copy each file separately to ensure they are always fresh
-COPY src/index.html /usr/share/nginx/html/
-COPY src/style.css /usr/share/nginx/html/
-COPY src/game.js /usr/share/nginx/html/
+# Copy game files - these change most frequently
+COPY src/ /usr/share/nginx/html/
 
-# Verify files were copied correctly
-RUN ls -la /usr/share/nginx/html/ && \
-    echo "File sizes:" && \
-    wc -c /usr/share/nginx/html/game.js /usr/share/nginx/html/index.html /usr/share/nginx/html/style.css
-
-# Add version info endpoint with cache busting and build timestamp
-RUN echo "{\"version\":\"${VERSION}\",\"build_date\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",\"cache_bust\":\"${CACHEBUST}\",\"built_at\":\"$(date)\"}" > /usr/share/nginx/html/version.json
+# Add version info endpoint
+RUN echo "{\"version\":\"${VERSION}\",\"build_date\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",\"cache_bust\":\"${CACHEBUST}\"}" > /usr/share/nginx/html/version.json
 
 # Expose port 80
 EXPOSE 80
