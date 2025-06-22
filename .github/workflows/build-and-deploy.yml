@@ -133,14 +133,19 @@ jobs:
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-    - name: Commit version bump
+    - name: Commit and push version bump
       run: |
         git add package.json
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
           git commit -m "🚀 Bump version to ${{ steps.version.outputs.new_version }}"
-          # Skip git push - let release action handle tagging
+
+          # Push the version bump back to main branch
+          echo "Pushing version bump to main branch..."
+          git push origin main
+
+          echo "Version ${{ steps.version.outputs.new_version }} committed and pushed successfully"
         fi
 
     - name: Log in to Container Registry
@@ -193,6 +198,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # Fetch the latest changes including the version bump
+        ref: main
+        fetch-depth: 0
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -216,6 +225,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
+        fetch-depth: 0
 
     - name: Update docker-compose version
       run: |
@@ -230,6 +241,8 @@ jobs:
         if git diff --staged --quiet; then
           echo "No deployment changes to commit"
         else
+          git pull origin main  # Get latest changes first
           git commit -m "📦 Update docker-compose for v${{ needs.build-and-push.outputs.version }}"
-          echo "Deployment files updated locally (skipping push to avoid conflicts)"
+          git push origin main
+          echo "Deployment files updated and pushed successfully"
         fi

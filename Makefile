@@ -113,3 +113,8 @@ info: ## Show project information
 	@echo "  make start     - Start development"
 	@echo "  make docker    - Deploy with Docker"
 	@echo "  make status    - Check deployment status"
+
+sync: ## Sync with remote (pull latest version changes)
+	@echo "🔄 Syncing with remote repository..."
+	git pull origin main
+	@echo "✓ Synced with latest changes"
