@@ -1,82 +1,197 @@
 # Geometry Jump 🎮
 
+[![Build and Deploy](https://github.com/yourusername/geometry-jump/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/yourusername/geometry-jump/actions/workflows/build-and-deploy.yml)
+[![Docker Image](https://ghcr.io/yourusername/geometry-jump/geometry-jump:latest)](https://ghcr.io/yourusername/geometry-jump/geometry-jump)
+
 A simple and fun Geometry Dash-style game built with HTML, CSS, and JavaScript for Joshua and Dad!
 
-## How to Play
+## 🚀 Quick Start
 
-- **Objective**: Jump over obstacles and survive as long as possible!
-- **Controls**: 
-  - Press `SPACE` to jump
-  - Click the canvas to jump
-  - Tap on mobile devices to jump
-- **Scoring**: Earn 10 points for each obstacle you pass
-- **Challenge**: The game gets faster and obstacles spawn more frequently as you progress!
+### Play Locally
+```bash
+# Open directly in browser
+open src/index.html
 
-## Features
+# Or serve with Node.js
+npm install
+npm start
+```
 
-- 🎯 Simple one-button gameplay
-- 🏆 High score tracking (saved locally)
-- 📱 Mobile-friendly responsive design
-- ✨ Particle effects and smooth animations
-- 🎨 Beautiful gradient backgrounds
-- ☁️ Animated background clouds
-- 🎵 Visual feedback with rotation effects
+### Deploy with Docker
+```bash
+# Build and run
+./deploy/deploy.sh docker
 
-## Game Mechanics
+# Access at http://localhost:8080
+```
 
-- **Player**: A cube that can jump to avoid obstacles
-- **Physics**: Realistic gravity and jump mechanics
-- **Obstacles**: Spikes that spawn from the right side
-- **Difficulty**: Game speed increases over time
-- **Particles**: Jump effects for visual feedback
+### Deploy to Kubernetes
+```bash
+# Deploy to K8s with Traefik
+./deploy/deploy.sh k8s
+```
 
-## Running the Game
+## 📁 Project Structure
+
+```
+geometry-jump/
+├── src/                    # Game source code
+│   ├── index.html         # Main HTML file
+│   ├── style.css          # Game styling
+│   └── game.js            # Game logic
+├── deploy/                # Deployment files
+│   ├── Dockerfile         # Container definition
+│   ├── docker-compose.yml # Docker Compose setup
+│   ├── k8s-*.yaml        # Kubernetes manifests
+│   ├── nginx.conf         # Web server config
+│   └── deploy.sh          # Deployment script
+├── docs/                  # Documentation
+│   ├── README.md          # Game documentation
+│   ├── DEVELOPMENT_LOG.md # Development history
+│   └── DEPLOYMENT.md      # Deployment guide
+├── scripts/               # Utility scripts
+│   └── version.sh         # Version management
+├── .github/workflows/     # CI/CD pipelines
+│   └── build-and-deploy.yml
+└── package.json           # Project metadata
+```
+
+## 🎮 Game Features
+
+- **Simple Controls**: Press SPACE or click to jump
+- **Progressive Difficulty**: Speed increases over time
+- **Score System**: Points for surviving obstacles
+- **High Score Tracking**: Persistent local storage
+- **Mobile Friendly**: Responsive design for all devices
+- **Version Display**: Shows current game version
+
+## 🔄 Automated CI/CD
+
+The project includes a GitHub Actions workflow that:
+
+1. **🧪 Tests**: Validates HTML/CSS/JS syntax
+2. **📦 Builds**: Creates Docker image with version tag
+3. **🚀 Deploys**: Publishes to GitHub Container Registry
+4. **📋 Releases**: Creates GitHub releases automatically
+5. **🔄 Updates**: Bumps version numbers automatically
+
+### Trigger Deployment
+Just push changes to the `main` branch in the `src/` or `deploy/` directories!
+
+```bash
+git add src/
+git commit -m "✨ Add new game feature"
+git push origin main
+```
+
+## 🏗️ Development Workflow
 
 ### Local Development
-1. Simply open `index.html` in any modern web browser
-2. No server required for local testing!
+```bash
+# Install dependencies
+npm install
 
-### Deploy to Home Server
-1. Copy all files (`index.html`, `style.css`, `game.js`) to your web server directory
-2. Access via your server's URL
-3. The game works on any device with a web browser
+# Start development server
+npm start
 
-## Files Structure
-
-```
-geometry/
-├── index.html    # Main HTML file
-├── style.css     # Game styling and animations
-├── game.js       # Game logic and mechanics
-└── README.md     # This file
+# Build Docker image
+npm run build
 ```
 
-## Technical Details
+### Version Management
+```bash
+# Get current version
+./scripts/version.sh get
 
-- **HTML5 Canvas**: For smooth game rendering
-- **CSS3**: Modern styling with gradients and animations
-- **Vanilla JavaScript**: No external dependencies
-- **LocalStorage**: High score persistence
-- **Responsive Design**: Works on desktop and mobile
+# Update version in source files
+./scripts/version.sh update
 
-## Future Enhancements Ideas
+# Bump version (patch)
+npm run version:patch
 
-- 🎵 Add background music and sound effects
-- 🌟 Power-ups and special abilities
-- 🎨 Multiple character skins
-- 🏅 Achievement system
-- 🌍 Different levels/environments
-- 👥 Multiplayer competition
-- 📊 Statistics tracking
+# Bump version (minor)
+npm run version:minor
+```
 
-## Tips for High Scores
+### Deployment Commands
+```bash
+# Docker deployment
+./deploy/deploy.sh docker
 
-- Time your jumps carefully - you can't jump while in mid-air!
-- The game gets faster, so stay focused
-- Practice makes perfect!
-- Try to get into a rhythm
+# Kubernetes deployment
+./deploy/deploy.sh k8s
 
-Have fun playing! 🎉
+# Check status
+./deploy/deploy.sh status
+
+# View logs
+./deploy/deploy.sh logs
+
+# Clean up
+./deploy/deploy.sh clean
+```
+
+## 🐳 Docker Images
+
+Images are automatically built and published to GitHub Container Registry:
+
+```bash
+# Pull latest
+docker pull ghcr.io/yourusername/geometry-jump/geometry-jump:latest
+
+# Run specific version
+docker run -p 8080:80 ghcr.io/yourusername/geometry-jump/geometry-jump:v1.0.1
+```
+
+## 📊 Monitoring
+
+### Health Checks
+- Container health endpoint: `/health`
+- Version information: `/version.json`
+- Application logs via Docker/Kubernetes
+
+### Performance
+- Nginx with gzip compression
+- Static asset caching
+- Minimal resource usage (64Mi RAM)
+
+## 🛡️ Security Features
+
+- Security headers (XSS, CSRF protection)
+- HTTPS with automatic certificates
+- Read-only filesystem
+- Non-root container execution
+
+## 🎯 Future Enhancements
+
+- [ ] 🎵 Sound effects and music
+- [ ] 🌟 Power-ups and abilities
+- [ ] 🎨 Multiple character skins
+- [ ] 🏅 Achievement system
+- [ ] 🌍 Different levels
+- [ ] 👥 Multiplayer features
+- [ ] 📊 Analytics dashboard
+
+## 📈 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes in `src/`
+4. Test locally with `npm start`
+5. Push to trigger automatic build
+6. Create a pull request
+
+## 📄 License
+
+MIT License - Built with ❤️ for Joshua & Dad
+
+## 🔗 Links
+
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Deployment Guide**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **Development Log**: [docs/DEVELOPMENT_LOG.md](docs/DEVELOPMENT_LOG.md)
+- **Container Registry**: [GitHub Packages](https://ghcr.io/yourusername/geometry-jump)
 
 ---
-*Made with ❤️ for Joshua by Dad*
+
+*Made with ❤️ by Dad for Joshua - Happy Gaming! 🎮*

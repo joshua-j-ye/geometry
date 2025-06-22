@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geometry-jump
+  namespace: default
+  labels:
+    app: geometry-jump
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: geometry-jump
+  template:
+    metadata:
+      labels:
+        app: geometry-jump
+        version: v1
+    spec:
+      containers:
+      - name: geometry-jump
+        image: ghcr.io/yourusername/geometry-jump/geometry-jump:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        env:
+        - name: NGINX_ENVSUBST_OUTPUT_DIR
+          value: "/etc/nginx"
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geometry-jump-service
+  namespace: default
+  labels:
+    app: geometry-jump
+spec:
+  selector:
+    app: geometry-jump
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: geometry-jump-ingress
+  namespace: default
+  labels:
+    app: geometry-jump
+  annotations:
+    # Traefik specific annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Optional: Enable automatic HTTPS redirect
+    traefik.ingress.kubernetes.io/redirect-entry-point: websecure
+    # Optional: Enable Let's Encrypt
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Performance optimizations
+    traefik.ingress.kubernetes.io/router.middlewares: default-compress@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - geometry.yourdomain.com
+    - geometry.local
+    secretName: geometry-jump-tls
+  rules:
+  - host: geometry.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: geometry-jump-service
+            port:
+              number: 80
+  - host: geometry.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: geometry-jump-service
+            port:
+              number: 80
+
+---
+# Optional: Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: geometry-jump-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: geometry-jump
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

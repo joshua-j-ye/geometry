@@ -1,0 +1,219 @@
+name: Build and Deploy Geometry Jump
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'deploy/**'
+      - 'package.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'deploy/**'
+      - 'package.json'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/geometry-jump
+
+jobs:
+  # Test the game (basic validation)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Validate HTML
+      run: |
+        npx html-validate src/index.html || echo "HTML validation completed"
+
+    - name: Check JavaScript syntax
+      run: |
+        node -c src/game.js
+        echo "JavaScript syntax check passed"
+
+    - name: Test game assets
+      run: |
+        test -f src/index.html
+        test -f src/style.css
+        test -f src/game.js
+        echo "All game assets present"
+
+  # Build and push Docker image
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: write
+
+    outputs:
+      version: ${{ steps.version.outputs.new_version }}
+      image: ${{ steps.image.outputs.image }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Bump version
+      id: version
+      run: |
+        # Get current version
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        echo "Current version: $CURRENT_VERSION"
+        
+        # Bump patch version
+        npm version patch --no-git-tag-version
+        NEW_VERSION=$(node -p "require('./package.json').version")
+        echo "New version: $NEW_VERSION"
+        
+        # Set output
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Commit version bump
+      run: |
+        git add package.json
+        git commit -m "🚀 Bump version to ${{ steps.version.outputs.new_version }}" || exit 0
+        git push origin main
+
+    - name: Create Git tag
+      run: |
+        git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release version ${{ steps.version.outputs.new_version }}"
+        git push origin "v${{ steps.version.outputs.new_version }}"
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern={{version}},value=v${{ steps.version.outputs.new_version }}
+          type=semver,pattern={{major}}.{{minor}},value=v${{ steps.version.outputs.new_version }}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deploy/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          VERSION=${{ steps.version.outputs.new_version }}
+
+    - name: Set image output
+      id: image
+      run: |
+        echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.new_version }}" >> $GITHUB_OUTPUT
+
+  # Create GitHub Release
+  release:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ needs.build-and-push.outputs.version }}
+        release_name: Geometry Jump v${{ needs.build-and-push.outputs.version }}
+        body: |
+          ## 🎮 Geometry Jump v${{ needs.build-and-push.outputs.version }}
+          
+          ### What's New
+          - Automatic build and deployment
+          - Version display in game
+          - Docker image: `${{ needs.build-and-push.outputs.image }}`
+          
+          ### How to Deploy
+          ```bash
+          # Docker
+          docker run -p 8080:80 ${{ needs.build-and-push.outputs.image }}
+          
+          # Docker Compose
+          VERSION=${{ needs.build-and-push.outputs.version }} docker-compose -f deploy/docker-compose.yml up -d
+          ```
+          
+          ### Play Online
+          Access the game at: http://localhost:8080
+          
+          Built with ❤️ for Joshua & Dad!
+        draft: false
+        prerelease: false
+
+  # Update deployment files
+  update-deployment:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update Kubernetes deployment
+      run: |
+        # Update image tag in k8s deployment
+        sed -i "s|image: geometry-jump:.*|image: ${{ needs.build-and-push.outputs.image }}|g" deploy/k8s-deployment.yaml
+        
+        # Update docker-compose default version
+        sed -i "s|VERSION:-latest|VERSION:-${{ needs.build-and-push.outputs.version }}|g" deploy/docker-compose.yml
+
+    - name: Commit deployment updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add deploy/
+        git commit -m "📦 Update deployment files for v${{ needs.build-and-push.outputs.version }}" || exit 0
+        git push origin main

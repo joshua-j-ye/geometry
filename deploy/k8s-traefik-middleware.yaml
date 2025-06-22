@@ -1,0 +1,48 @@
+# Optional: Traefik middleware for compression and security
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: compress
+  namespace: default
+spec:
+  compress: {}
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: https
+    customResponseHeaders:
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: no-referrer-when-downgrade
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+---
+# Optional: IngressRoute (Traefik CRD alternative to Ingress)
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: geometry-jump-route
+  namespace: default
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`geometry.yourdomain.com`) || Host(`geometry.local`)
+    kind: Rule
+    services:
+    - name: geometry-jump-service
+      port: 80
+    middlewares:
+    - name: compress
+    - name: security-headers
+  tls:
+    certResolver: letsencrypt-prod

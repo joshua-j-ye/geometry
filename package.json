@@ -1,0 +1,42 @@
+{
+  "name": "geometry-jump",
+  "version": "1.0.0",
+  "description": "A simple Geometry Dash-style game built with HTML, CSS, and JavaScript",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "http-server src -p 3000 -o",
+    "build": "npm run version:patch && npm run docker:build",
+    "docker:build": "cd deploy && docker build -t geometry-jump:$(node -p \"require('../package.json').version\") -t geometry-jump:latest .",
+    "docker:run": "cd deploy && docker-compose up -d",
+    "docker:stop": "cd deploy && docker-compose down",
+    "k8s:deploy": "cd deploy && ./deploy.sh k8s",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "serve": "http-server src -p 3000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/geometry-jump.git"
+  },
+  "keywords": [
+    "game",
+    "geometry-dash",
+    "html5",
+    "javascript",
+    "canvas",
+    "webgame"
+  ],
+  "author": "Joshua & Dad",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/geometry-jump/issues"
+  },
+  "homepage": "https://github.com/yourusername/geometry-jump#readme",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -11,6 +11,10 @@ class GeometryJump {
         this.gameSpeed = 2;
         this.speedIncrement = 0.002;
         
+        // Version info
+        this.version = '1.0.0';
+        this.loadVersionInfo();
+        
         // Player properties
         this.player = {
             x: 100,
@@ -45,6 +49,26 @@ class GeometryJump {
         this.initEventListeners();
         this.updateHighScoreDisplay();
         this.gameLoop();
+    }
+    
+    async loadVersionInfo() {
+        try {
+            // Try to fetch version from server (containerized deployment)
+            const response = await fetch('/version.json');
+            if (response.ok) {
+                const versionData = await response.json();
+                this.version = versionData.version;
+            }
+        } catch (error) {
+            // Fallback to package.json version or default
+            console.log('Using default version info');
+        }
+        
+        // Update version display
+        const versionElement = document.getElementById('version');
+        if (versionElement) {
+            versionElement.textContent = `v${this.version}`;
+        }
     }
     
     initEventListeners() {
