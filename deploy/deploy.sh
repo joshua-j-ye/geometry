@@ -42,6 +42,7 @@ Usage: $0 [OPTION]
 
 Options:
     build          Build Docker image
+    rebuild        Force rebuild Docker image (no cache)
     up             Start local development environment
     down           Stop local development environment
     logs           Show application logs
@@ -51,12 +52,45 @@ Options:
 
 Examples:
     $0 build       # Build Docker image
+    $0 rebuild     # Force rebuild Docker image (no cache)
     $0 up          # Start local development
     $0 down        # Stop local development
     $0 logs        # Show logs
     $0 clean       # Clean up resources
 
 EOF
+}
+
+# Force rebuild Docker image (bypasses all caching)
+force_rebuild() {
+    log_info "Force rebuilding Geometry Jump Docker image (no cache)..."
+
+    # Get version from package.json
+    VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "latest")
+    export VERSION
+
+    # Use timestamp for cache busting
+    CACHEBUST=$(date +%s)
+
+    log_info "Force building with version: $VERSION, cache bust: $CACHEBUST"
+
+    # Remove existing images first
+    docker rmi geometry-jump:"$VERSION" 2>/dev/null || true
+    docker rmi geometry-jump:latest 2>/dev/null || true
+
+    # Build with version and cache busting, no cache
+    cd deploy
+    docker build \
+        --no-cache \
+        --pull \
+        --build-arg VERSION="$VERSION" \
+        --build-arg CACHEBUST="$CACHEBUST" \
+        -t geometry-jump:"$VERSION" \
+        -t geometry-jump:latest \
+        -f Dockerfile ..
+    cd ..
+
+    log_success "Docker image force rebuilt successfully! Version: $VERSION"
 }
 
 # Build Docker image
@@ -67,9 +101,20 @@ build_image() {
     VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "latest")
     export VERSION
 
-    # Build with version
+    # Use timestamp for cache busting to ensure latest changes are picked up
+    CACHEBUST=$(date +%s)
+
+    log_info "Building with version: $VERSION, cache bust: $CACHEBUST"
+
+    # Build with version and cache busting
     cd deploy
-    docker build --build-arg VERSION="$VERSION" -t geometry-jump:"$VERSION" -t geometry-jump:latest -f Dockerfile ..
+    docker build \
+        --no-cache \
+        --build-arg VERSION="$VERSION" \
+        --build-arg CACHEBUST="$CACHEBUST" \
+        -t geometry-jump:"$VERSION" \
+        -t geometry-jump:latest \
+        -f Dockerfile ..
     cd ..
 
     log_success "Docker image built successfully! Version: $VERSION"
@@ -82,9 +127,11 @@ start_local() {
     # Create logs directory
     mkdir -p logs
 
-    # Start with docker-compose
+    # Start with docker-compose, using cache bust for fresh builds
     cd deploy
-    VERSION=${VERSION:-$(node -p "require('../package.json').version" 2>/dev/null || echo "latest")} docker-compose up -d
+    VERSION=${VERSION:-$(node -p "require('../package.json').version" 2>/dev/null || echo "latest")} \
+    CACHEBUST=$(date +%s) \
+    docker-compose up -d --build
     cd ..
 
     log_success "Local development environment started!"
@@ -164,6 +211,9 @@ clean_up() {
 case "${1:-help}" in
     build)
         build_image
+        ;;
+    rebuild)
+        force_rebuild
         ;;
     up)
         start_local

@@ -173,8 +173,10 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        no-cache: true
         build-args: |
           VERSION=${{ steps.version.outputs.new_version }}
+          CACHEBUST=${{ github.run_number }}-${{ github.sha }}
 
     - name: Set image output
       id: image
