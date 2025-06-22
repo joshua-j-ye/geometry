@@ -14,22 +14,22 @@
             <div class="score">Score: <span id="score">0</span></div>
             <div class="high-score">Best: <span id="high-score">0</span></div>
         </div>
-        
+
         <canvas id="gameCanvas" width="800" height="400"></canvas>
-        
+
         <div class="controls">
             <p>Press SPACE or click to jump!</p>
-            <button id="startBtn">Start Game</button>
-            <button id="restartBtn" style="display: none;">Play Again</button>
+            <button type="button" id="startBtn">Start Game</button>
+            <button type="button" id="restartBtn" style="display: none;">Play Again</button>
         </div>
-        
+
         <div class="game-over" id="gameOver" style="display: none;">
             <h2>Game Over!</h2>
             <p>Your Score: <span id="finalScore">0</span></p>
             <p id="newRecord" style="display: none;">🎉 New High Score! 🎉</p>
         </div>
     </div>
-    
+
     <script src="game.js"></script>
 </body>
 </html>

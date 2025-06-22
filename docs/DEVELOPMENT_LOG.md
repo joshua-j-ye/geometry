@@ -1,18 +1,18 @@
 # Geometry Jump - Development Log
 
 ## Project Overview
-**Date**: June 22, 2025  
-**Project**: Geometry Dash-style game for Joshua and Dad  
-**Technology Stack**: HTML, CSS, JavaScript  
-**Goal**: Create a simple playable game to test and deploy to home server  
+**Date**: June 22, 2025
+**Project**: Geometry Dash-style game for Joshua and Dad
+**Technology Stack**: HTML, CSS, JavaScript
+**Goal**: Create a simple playable game to test and deploy to my home server
 
 ---
 
 ## Conversation History
 
 ### User Request
-> I am doing a hobby project with my son Joshua. We want to build a simple game like geometry dash. 
-> Create a simple playable first version for us, so we can test, and deploy to my home server. 
+> I am doing a hobby project with my son Joshua. We want to build a simple game like geometry dash.
+> Create a simple playable first version for us, so we can test, and deploy to my home server.
 > Use html, javascript, css.
 
 ### Solution Delivered
@@ -117,8 +117,8 @@ class GeometryJump {
 ## Development Session 2 - June 22, 2025
 
 ### User Request
-> reorganize the file structure a bit. 
-> and also create a github pipeline, whenever new game related changes in main branch, bump version  number, build a new docker image and publish it. 
+> reorganize the file structure a bit.
+> and also create a github pipeline, whenever new game related changes in main branch, bump version  number, build a new docker image and publish it.
 > show version number in the game.
 
 ### Major Restructuring & CI/CD Implementation
@@ -129,7 +129,7 @@ class GeometryJump {
 ```
 geometry/
 ├── index.html
-├── style.css  
+├── style.css
 ├── game.js
 ├── Dockerfile
 ├── docker-compose.yml
@@ -175,7 +175,7 @@ geometry-jump/
 ##### Version Display in Game:
 - **HTML**: Version display element in header
 - **CSS**: Styling for version badge (gold color)
-- **JavaScript**: 
+- **JavaScript**:
   - `loadVersionInfo()` method to fetch version
   - Tries `/version.json` endpoint (containerized)
   - Fallback to hardcoded version
@@ -267,7 +267,7 @@ geometry-jump/
 **Key Commands:**
 ```bash
 make start          # Development server
-make build          # Docker build  
+make build          # Docker build
 make docker         # Docker deployment
 make k8s           # Kubernetes deployment
 make version-patch  # Bump version
@@ -357,6 +357,176 @@ git push origin main
 - **Container Technology**: Docker best practices
 - **Version Management**: Professional versioning strategy
 - **Documentation**: Clear guides and examples
+
+---
+
+## June 22, 2025 - GitHub Actions Debugging Session
+
+### Issue: GitHub Actions Pipeline Failures
+**Problem**: The automated build and deploy pipeline was failing with multiple issues:
+1. Deprecated `actions/create-release@v1` action
+2. Docker build context path issues in Dockerfile
+3. Missing dependencies for HTML validation
+4. Git commit and version bumping errors
+
+### Actions Taken:
+
+#### 1. Fixed Deprecated GitHub Action
+- **Issue**: `actions/create-release@v1` is deprecated and no longer works
+- **Solution**: Replaced with `softprops/action-gh-release@v1`
+- **Code Change**: Updated `.github/workflows/build-and-deploy.yml`
+
+#### 2. Fixed Docker Build Context
+- **Issue**: Dockerfile was using `../src/` paths which fail when build context is root
+- **Solution**: Changed to `src/` and `deploy/nginx.conf` paths
+- **Files Modified**: `deploy/Dockerfile`
+
+#### 3. Enhanced Error Handling
+- **Issue**: Git operations failing with unclear errors
+- **Solution**: Added proper error handling and conditional commits
+- **Improvement**: Only commit when there are actual changes
+
+#### 4. Added Development Dependencies
+- **Issue**: HTML validation failing due to missing packages
+- **Solution**: Added `html-validate` to `package.json` devDependencies
+- **Files**: `package.json`, `.htmlvalidate.json`
+
+#### 5. Simplified Docker Metadata
+- **Issue**: Complex semver patterns causing tag generation issues
+- **Solution**: Simplified to basic version and latest tags
+
+#### 6. Added Local Testing Setup
+- **Tool**: `act` - GitHub Actions local runner
+- **Purpose**: Debug pipeline issues locally before pushing
+- **Status**: Already installed and ready to use
+
+### Local Testing Commands:
+```bash
+# Test the entire workflow
+act -j test
+
+# Test specific job
+act -j build-and-push
+
+# Test with specific event
+act push
+
+# List available workflows
+act -l
+```
+
+### Next Steps:
+1. Test pipeline locally with `act` before pushing changes
+2. Set up workspace policy for development log updates
+3. Continue monitoring and improving pipeline reliability
+
+### Files Modified:
+- `.github/workflows/build-and-deploy.yml` - Major workflow fixes
+- `deploy/Dockerfile` - Path corrections and curl addition
+- `package.json` - Added html-validate dependency
+- `.htmlvalidate.json` - HTML validation configuration (new)
+
+### Lessons Learned:
+- Always test Docker build context paths carefully
+- Keep up with GitHub Actions deprecations
+- Local testing saves time and GitHub Actions minutes
+- Proper error handling prevents confusing failures
+
+---
+
+## [June 22, 2025] - GitHub Actions Pipeline Debugging Session
+
+### Issue: GitHub Actions Workflow Failing with Multiple Errors
+**Problem**: The CI/CD pipeline was failing with several critical issues:
+1. HTML validation errors due to missing button type attributes
+2. Deprecated GitHub Actions causing release creation failures
+3. Docker build failing due to incorrect file paths in Dockerfile
+4. Missing dependencies and validation issues
+
+### Root Cause Analysis:
+1. **HTML Validation**: Buttons missing required `type="button"` attribute
+2. **Deprecated Actions**: `actions/create-release@v1` is deprecated and no longer works
+3. **Docker Build Context**: Dockerfile used relative paths `../src/` but build context was root directory
+4. **Release Action**: Missing proper environment variable setup
+
+### Actions Taken:
+
+#### 1. HTML Validation Fix
+- **Issue**: Buttons missing `type` attribute causing validation errors
+- **Solution**: Added `type="button"` to all button elements in `src/index.html`
+- **Files Modified**: `src/index.html`
+- **Verification**: `npx html-validate src/index.html` now passes ✅
+
+#### 2. GitHub Actions Update
+- **Issue**: Deprecated `actions/create-release@v1` action failing
+- **Solution**: Replaced with modern `softprops/action-gh-release@v1`
+- **Files Modified**: `.github/workflows/build-and-deploy.yml`
+- **Benefits**: Better maintained action with more features
+
+#### 3. Docker Build Fixes
+- **Issue**: Dockerfile copying files from `../src/` when build context is root
+- **Solution**: Changed paths to `src/`, `docs/`, `deploy/` (relative to root)
+- **Files Modified**: `deploy/Dockerfile`
+- **Additional**: Added `curl` installation for health checks
+
+#### 4. Workflow Robustness Improvements
+- **Added**: Better error handling for git operations
+- **Added**: Debug information step to help troubleshooting
+- **Added**: More robust version validation
+- **Added**: HTML validation dependency in package.json
+
+### Commands Used:
+```bash
+# Test HTML validation locally
+npx html-validate src/index.html
+
+# Test JavaScript syntax
+node -c src/game.js
+
+# Test Docker build locally
+docker build -f deploy/Dockerfile -t geometry-jump:test .
+
+# Check package files
+npm ci  # (Fixed by ensuring package-lock.json exists)
+```
+
+### Files Modified:
+- `src/index.html` - Added `type="button"` to button elements
+- `.github/workflows/build-and-deploy.yml` - Multiple improvements:
+  - Replaced deprecated actions
+  - Added debug information
+  - Improved error handling
+  - Better permissions setup
+  - Simplified Docker metadata
+- `deploy/Dockerfile` - Fixed file paths and added curl
+- `package.json` - Added html-validate dependency
+- `.htmlvalidate.json` - Created HTML validation config
+
+### Local Testing Results:
+✅ HTML validation passes
+✅ JavaScript syntax check passes
+✅ Docker build completes successfully (6.6s)
+✅ All major workflow components tested locally
+
+### Lessons Learned:
+1. **Always test locally first**: Docker and npm commands can be tested before pushing
+2. **Keep actions updated**: Deprecated actions cause hard-to-debug failures
+3. **File paths matter**: Docker build context affects COPY commands
+4. **Validation is important**: HTML validation caught real issues with accessibility
+5. **Incremental testing**: Test each component separately to isolate issues
+
+### Next Steps:
+1. Push changes and monitor GitHub Actions execution
+2. Verify release creation works properly
+3. Test full deployment pipeline end-to-end
+4. Consider setting up branch protection rules
+
+### Tools for Local GitHub Actions Testing:
+- **act**: Tool for running GitHub Actions locally (installed via `curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash`)
+- **Docker**: Essential for testing containerized builds
+- **npm/npx**: For testing Node.js based validation steps
+
+**Status**: Ready for deployment - all major issues identified and fixed ✅
 
 ---
 
