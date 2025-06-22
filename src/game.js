@@ -4,17 +4,17 @@ class GeometryJump {
         this.ctx = this.canvas.getContext('2d');
         this.gameRunning = false;
         this.gameStarted = false;
-        
+
         // Game state
         this.score = 0;
         this.highScore = localStorage.getItem('geometryJumpHighScore') || 0;
         this.gameSpeed = 2;
         this.speedIncrement = 0.002;
-        
+
         // Version info
         this.version = '1.0.0';
         this.loadVersionInfo();
-        
+
         // Player properties
         this.player = {
             x: 100,
@@ -27,30 +27,30 @@ class GeometryJump {
             gravity: 0.6,
             color: '#FF6B6B'
         };
-        
+
         // Ground
         this.ground = {
             y: 350,
             height: 50
         };
-        
+
         // Obstacles
         this.obstacles = [];
         this.obstacleSpawnTimer = 0;
         this.obstacleSpawnRate = 150;
-        
+
         // Background elements
         this.clouds = [];
         this.initClouds();
-        
+
         // Particle effects
         this.particles = [];
-        
+
         this.initEventListeners();
         this.updateHighScoreDisplay();
         this.gameLoop();
     }
-    
+
     async loadVersionInfo() {
         try {
             // Try to fetch version from server (containerized deployment)
@@ -63,19 +63,19 @@ class GeometryJump {
             // Fallback to package.json version or default
             console.log('Using default version info');
         }
-        
+
         // Update version display
         const versionElement = document.getElementById('version');
         if (versionElement) {
             versionElement.textContent = `v${this.version}`;
         }
     }
-    
+
     initEventListeners() {
         // Start button
         document.getElementById('startBtn').addEventListener('click', () => this.startGame());
         document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
-        
+
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
@@ -89,7 +89,7 @@ class GeometryJump {
                 }
             }
         });
-        
+
         // Mouse/touch controls
         this.canvas.addEventListener('click', () => {
             if (!this.gameStarted) {
@@ -98,7 +98,7 @@ class GeometryJump {
                 this.jump();
             }
         });
-        
+
         // Touch controls for mobile
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -109,7 +109,7 @@ class GeometryJump {
             }
         });
     }
-    
+
     initClouds() {
         for (let i = 0; i < 5; i++) {
             this.clouds.push({
@@ -121,7 +121,7 @@ class GeometryJump {
             });
         }
     }
-    
+
     startGame() {
         this.gameRunning = true;
         this.gameStarted = true;
@@ -130,22 +130,22 @@ class GeometryJump {
         this.obstacles = [];
         this.particles = [];
         this.obstacleSpawnTimer = 0;
-        
+
         // Reset player
         this.player.y = 300;
         this.player.velocityY = 0;
         this.player.isJumping = false;
-        
+
         // Hide start button, show game
         document.getElementById('startBtn').style.display = 'none';
         document.getElementById('gameOver').style.display = 'none';
         document.getElementById('restartBtn').style.display = 'none';
     }
-    
+
     restartGame() {
         this.startGame();
     }
-    
+
     jump() {
         if (!this.player.isJumping) {
             this.player.velocityY = this.player.jumpPower;
@@ -153,7 +153,7 @@ class GeometryJump {
             this.createJumpParticles();
         }
     }
-    
+
     createJumpParticles() {
         for (let i = 0; i < 5; i++) {
             this.particles.push({
@@ -168,33 +168,33 @@ class GeometryJump {
             });
         }
     }
-    
+
     updatePlayer() {
         // Apply gravity
         this.player.velocityY += this.player.gravity;
         this.player.y += this.player.velocityY;
-        
+
         // Ground collision
         if (this.player.y + this.player.height >= this.ground.y) {
             this.player.y = this.ground.y - this.player.height;
             this.player.velocityY = 0;
             this.player.isJumping = false;
         }
-        
+
         // Rotation effect when jumping
         this.player.rotation = this.player.isJumping ? this.player.velocityY * 0.1 : 0;
     }
-    
+
     spawnObstacle() {
         this.obstacles.push({
             x: this.canvas.width,
-            y: this.ground.y - 40,
+            y: this.ground.y - 30,
             width: 30,
-            height: 40,
+            height: 30,
             color: '#4ECDC4'
         });
     }
-    
+
     updateObstacles() {
         // Spawn obstacles
         this.obstacleSpawnTimer++;
@@ -204,11 +204,11 @@ class GeometryJump {
             // Gradually decrease spawn rate (increase difficulty)
             this.obstacleSpawnRate = Math.max(80, this.obstacleSpawnRate - 0.5);
         }
-        
+
         // Update obstacle positions
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             this.obstacles[i].x -= this.gameSpeed;
-            
+
             // Remove obstacles that are off screen
             if (this.obstacles[i].x + this.obstacles[i].width < 0) {
                 this.obstacles.splice(i, 1);
@@ -216,11 +216,11 @@ class GeometryJump {
                 this.updateScoreDisplay();
             }
         }
-        
+
         // Increase game speed gradually
         this.gameSpeed += this.speedIncrement;
     }
-    
+
     updateParticles() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
@@ -228,13 +228,13 @@ class GeometryJump {
             particle.y += particle.velocityY;
             particle.velocityY += 0.1; // Gravity for particles
             particle.life--;
-            
+
             if (particle.life <= 0) {
                 this.particles.splice(i, 1);
             }
         }
     }
-    
+
     updateClouds() {
         this.clouds.forEach(cloud => {
             cloud.x -= cloud.speed;
@@ -244,7 +244,7 @@ class GeometryJump {
             }
         });
     }
-    
+
     checkCollisions() {
         for (let obstacle of this.obstacles) {
             if (this.player.x < obstacle.x + obstacle.width &&
@@ -256,10 +256,10 @@ class GeometryJump {
             }
         }
     }
-    
+
     gameOver() {
         this.gameRunning = false;
-        
+
         // Check for high score
         if (this.score > this.highScore) {
             this.highScore = this.score;
@@ -268,72 +268,78 @@ class GeometryJump {
         } else {
             document.getElementById('newRecord').style.display = 'none';
         }
-        
+
         // Show game over screen
         document.getElementById('finalScore').textContent = this.score;
         document.getElementById('gameOver').style.display = 'block';
         document.getElementById('restartBtn').style.display = 'inline-block';
-        
+
         this.updateHighScoreDisplay();
     }
-    
+
     updateScoreDisplay() {
         document.getElementById('score').textContent = this.score;
     }
-    
+
     updateHighScoreDisplay() {
         document.getElementById('high-score').textContent = this.highScore;
     }
-    
+
     drawPlayer() {
         this.ctx.save();
         this.ctx.translate(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2);
         this.ctx.rotate(this.player.rotation || 0);
-        
+
         // Draw player cube with gradient
-        const gradient = this.ctx.createLinearGradient(-this.player.width / 2, -this.player.height / 2, 
+        const gradient = this.ctx.createLinearGradient(-this.player.width / 2, -this.player.height / 2,
                                                       this.player.width / 2, this.player.height / 2);
         gradient.addColorStop(0, this.player.color);
         gradient.addColorStop(1, '#FF8E8E');
-        
+
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(-this.player.width / 2, -this.player.height / 2, this.player.width, this.player.height);
-        
+
         // Add border
         this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(-this.player.width / 2, -this.player.height / 2, this.player.width, this.player.height);
-        
+
         this.ctx.restore();
     }
-    
-    drawObstacles() {
+     drawObstacles() {
         this.obstacles.forEach(obstacle => {
-            // Draw obstacle with gradient
-            const gradient = this.ctx.createLinearGradient(obstacle.x, obstacle.y, 
+            // Draw spike-like obstacle
+            const gradient = this.ctx.createLinearGradient(obstacle.x, obstacle.y,
                                                           obstacle.x, obstacle.y + obstacle.height);
             gradient.addColorStop(0, obstacle.color);
             gradient.addColorStop(1, '#45B7B8');
-            
+
             this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            
+
+            // Draw spike shape (triangle pointing up)
+            this.ctx.beginPath();
+            this.ctx.moveTo(obstacle.x + obstacle.width / 2, obstacle.y); // Top point
+            this.ctx.lineTo(obstacle.x, obstacle.y + obstacle.height); // Bottom left
+            this.ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height); // Bottom right
+            this.ctx.closePath();
+            this.ctx.fill();
+
             // Add border
             this.ctx.strokeStyle = '#FFFFFF';
             this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            this.ctx.stroke();
         });
     }
-    
+
     drawGround() {
         // Draw ground with pattern
         const gradient = this.ctx.createLinearGradient(0, this.ground.y, 0, this.canvas.height);
         gradient.addColorStop(0, '#8B4513');
         gradient.addColorStop(1, '#A0522D');
-        
+
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, this.ground.y, this.canvas.width, this.ground.height);
-        
+
         // Add grass line
         this.ctx.strokeStyle = '#228B22';
         this.ctx.lineWidth = 3;
@@ -342,7 +348,7 @@ class GeometryJump {
         this.ctx.lineTo(this.canvas.width, this.ground.y);
         this.ctx.stroke();
     }
-    
+
     drawClouds() {
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         this.clouds.forEach(cloud => {
@@ -353,7 +359,7 @@ class GeometryJump {
             this.ctx.fill();
         });
     }
-    
+
     drawParticles() {
         this.particles.forEach(particle => {
             const alpha = particle.life / particle.maxLife;
@@ -363,15 +369,15 @@ class GeometryJump {
             this.ctx.fill();
         });
     }
-    
+
     draw() {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Draw background elements
         this.drawClouds();
         this.drawGround();
-        
+
         if (this.gameStarted) {
             this.drawPlayer();
             this.drawObstacles();
@@ -384,7 +390,7 @@ class GeometryJump {
             this.ctx.fillText('Click Start Game to Begin!', this.canvas.width / 2, this.canvas.height / 2);
         }
     }
-    
+
     gameLoop() {
         if (this.gameRunning) {
             this.updatePlayer();
@@ -392,10 +398,10 @@ class GeometryJump {
             this.updateParticles();
             this.checkCollisions();
         }
-        
+
         this.updateClouds();
         this.draw();
-        
+
         requestAnimationFrame(() => this.gameLoop());
     }
 }
