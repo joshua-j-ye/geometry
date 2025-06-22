@@ -34,7 +34,8 @@
   },
   "homepage": "https://github.com/yourusername/geometry-jump#readme",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "html-validate": "^8.0.0"
   },
   "engines": {
     "node": ">=14.0.0"
