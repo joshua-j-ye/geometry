@@ -154,6 +154,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: main
         fetch-depth: 0
+        clean: true
 
     - name: Verify source files are latest
       run: |
@@ -163,6 +164,38 @@ jobs:
         echo "Source files modified times:"
         ls -la src/
         echo "Build timestamp: $(date)"
+        echo "Git log (last 3 commits):"
+        git log --oneline -3
+        echo "Current HEAD commit:"
+        git rev-parse HEAD
+        echo "Checking if working directory is clean:"
+        git status --porcelain
+        echo "Showing recent changes to game.js:"
+        echo "Last 5 commits that touched src/game.js:"
+        git log --oneline -5 -- src/game.js || echo "No recent commits found for src/game.js"
+
+    - name: Clean Docker build environment
+      run: |
+        echo "🧹 Cleaning Docker build environment..."
+        docker system df
+        # Remove any existing images to ensure fresh build
+        docker images | grep ${{ env.IMAGE_NAME }} | awk '{print $3}' | xargs -r docker rmi -f || true
+        echo "Docker build environment cleaned"
+
+    - name: Generate build context info
+      id: buildinfo
+      run: |
+        echo "Generating build context information..."
+        echo "Source file hashes:"
+        GAME_HASH=$(sha256sum src/game.js | cut -d' ' -f1)
+        HTML_HASH=$(sha256sum src/index.html | cut -d' ' -f1)
+        CSS_HASH=$(sha256sum src/style.css | cut -d' ' -f1)
+        echo "game_hash=${GAME_HASH}" >> $GITHUB_OUTPUT
+        echo "html_hash=${HTML_HASH}" >> $GITHUB_OUTPUT
+        echo "css_hash=${CSS_HASH}" >> $GITHUB_OUTPUT
+        echo "Game.js hash: ${GAME_HASH}"
+        echo "Index.html hash: ${HTML_HASH}"
+        echo "Style.css hash: ${CSS_HASH}"
 
     - name: Log in to Container Registry
       uses: docker/login-action@v3
@@ -195,17 +228,24 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         no-cache: true
+        pull: true
         build-args: |
           VERSION=${{ steps.version.outputs.new_version }}
-          CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}
+          CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}-$(date +%s)-${{ steps.buildinfo.outputs.game_hash }}
 
-    - name: Verify built image
+    - name: Verify built image contains latest changes
       run: |
         echo "🔍 Verifying built image contains latest changes..."
         echo "Expected version: ${{ steps.version.outputs.new_version }}"
         echo "Build args used:"
         echo "  VERSION=${{ steps.version.outputs.new_version }}"
-        echo "  CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}"
+        echo "  CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}-$(date +%s)"
+        echo "Source file hashes before build:"
+        sha256sum src/game.js src/index.html src/style.css
+        echo "Running test container to verify files..."
+        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.new_version }} sh -c "sha256sum /usr/share/nginx/html/game.js /usr/share/nginx/html/index.html /usr/share/nginx/html/style.css"
+        echo "Checking for specific obstacle-related code in the built image:"
+        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.new_version }} sh -c "grep -n 'spawnObstacle\|drawObstacles\|obstacle' /usr/share/nginx/html/game.js | head -10" || echo "Could not find obstacle-related code patterns"
 
     - name: Set image output
       id: image

@@ -20,9 +20,15 @@ RUN echo "Cache bust: ${CACHEBUST}" > /tmp/cachebust
 
 # Copy game files to nginx html directory
 # These should be copied last as they change most frequently
+# Copy each file separately to ensure they are always fresh
 COPY src/index.html /usr/share/nginx/html/
 COPY src/style.css /usr/share/nginx/html/
 COPY src/game.js /usr/share/nginx/html/
+
+# Verify files were copied correctly
+RUN ls -la /usr/share/nginx/html/ && \
+    echo "File sizes:" && \
+    wc -c /usr/share/nginx/html/game.js /usr/share/nginx/html/index.html /usr/share/nginx/html/style.css
 
 # Add version info endpoint with cache busting and build timestamp
 RUN echo "{\"version\":\"${VERSION}\",\"build_date\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",\"cache_bust\":\"${CACHEBUST}\",\"built_at\":\"$(date)\"}" > /usr/share/nginx/html/version.json
