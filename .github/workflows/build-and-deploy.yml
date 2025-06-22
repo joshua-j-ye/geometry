@@ -212,37 +212,3 @@ jobs:
         name: Geometry Jump v${{ needs.build-and-push.outputs.version }}
         generate_release_notes: true
         make_latest: true
-
-  # Update deployment files
-  update-deployment:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        ref: main
-        fetch-depth: 0
-
-    - name: Update docker-compose version
-      run: |
-        # Update docker-compose default version
-        sed -i "s|VERSION:-latest|VERSION:-${{ needs.build-and-push.outputs.version }}|g" deploy/docker-compose.yml
-
-    - name: Commit deployment updates
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add deploy/docker-compose.yml
-        if git diff --staged --quiet; then
-          echo "No deployment changes to commit"
-        else
-          git pull origin main  # Get latest changes first
-          git commit -m "📦 Update docker-compose for v${{ needs.build-and-push.outputs.version }}"
-          git push origin main
-          echo "Deployment files updated and pushed successfully"
-        fi

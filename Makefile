@@ -1,6 +1,6 @@
 # Geometry Jump - Makefile for easy commands
 
-.PHONY: help install start build docker k8s test clean status logs version
+.PHONY: help install start build docker k8s test clean status logs version sync docker-latest docker-version test-build
 
 # Default target
 help: ## Show this help message
@@ -75,6 +75,18 @@ docker-build: build ## Alias for build
 docker-logs: ## Show Docker logs
 	./deploy/deploy.sh logs
 
+docker-latest: ## Deploy with latest Docker image
+	@echo "🐳 Deploying with latest Docker image..."
+	VERSION=latest ./deploy/deploy.sh up
+
+docker-version: ## Deploy with specific version (usage: make docker-version VERSION=1.2.3)
+	@echo "🐳 Deploying with version: $(VERSION)"
+	@if [ -z "$(VERSION)" ]; then \
+		echo "❌ Please specify VERSION. Example: make docker-version VERSION=1.2.3"; \
+		exit 1; \
+	fi
+	VERSION=$(VERSION) ./deploy/deploy.sh up
+
 # Utility commands
 open: ## Open game in browser
 	@echo "🎮 Opening Geometry Jump..."
@@ -112,9 +124,13 @@ info: ## Show project information
 	@echo "Quick commands:"
 	@echo "  make start     - Start development"
 	@echo "  make docker    - Deploy with Docker"
+	@echo "  make sync      - Sync with remote changes"
 	@echo "  make status    - Check deployment status"
 
 sync: ## Sync with remote (pull latest version changes)
 	@echo "🔄 Syncing with remote repository..."
 	git pull origin main
 	@echo "✓ Synced with latest changes"
+
+test-build: ## Test build process
+	./scripts/test-build.sh
