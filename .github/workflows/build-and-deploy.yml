@@ -148,6 +148,22 @@ jobs:
           echo "Version ${{ steps.version.outputs.new_version }} committed and pushed successfully"
         fi
 
+    - name: Checkout updated repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
+        fetch-depth: 0
+
+    - name: Verify source files are latest
+      run: |
+        echo "🔍 Verifying source files..."
+        echo "Current package.json version: $(node -p "require('./package.json').version")"
+        echo "Expected version: ${{ steps.version.outputs.new_version }}"
+        echo "Source files modified times:"
+        ls -la src/
+        echo "Build timestamp: $(date)"
+
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
@@ -181,7 +197,15 @@ jobs:
         no-cache: true
         build-args: |
           VERSION=${{ steps.version.outputs.new_version }}
-          CACHEBUST=${{ github.run_number }}-${{ github.sha }}
+          CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}
+
+    - name: Verify built image
+      run: |
+        echo "🔍 Verifying built image contains latest changes..."
+        echo "Expected version: ${{ steps.version.outputs.new_version }}"
+        echo "Build args used:"
+        echo "  VERSION=${{ steps.version.outputs.new_version }}"
+        echo "  CACHEBUST=${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}"
 
     - name: Set image output
       id: image
