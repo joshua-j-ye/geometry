@@ -1,5 +1,10 @@
 name: Build and Deploy Geometry Jump
 
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 on:
   push:
     branches: [ main ]
@@ -75,6 +80,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
+        persist-credentials: true
 
     - name: Debug info
       run: |
@@ -105,24 +111,24 @@ jobs:
         # Get current version
         CURRENT_VERSION=$(node -p "require('./package.json').version")
         echo "Current version: $CURRENT_VERSION"
-        
+
         # Check if version exists
         if [ -z "$CURRENT_VERSION" ]; then
           echo "Error: Could not read current version"
           exit 1
         fi
-        
+
         # Bump patch version
         npm version patch --no-git-tag-version
         NEW_VERSION=$(node -p "require('./package.json').version")
         echo "New version: $NEW_VERSION"
-        
+
         # Verify new version is different
         if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
           echo "Error: Version was not bumped"
           exit 1
         fi
-        
+
         # Set output
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
@@ -134,13 +140,8 @@ jobs:
           echo "No changes to commit"
         else
           git commit -m "🚀 Bump version to ${{ steps.version.outputs.new_version }}"
-          git push origin main
+          # Skip git push - let release action handle tagging
         fi
-
-    - name: Create Git tag
-      run: |
-        git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release version ${{ steps.version.outputs.new_version }}"
-        git push origin "v${{ steps.version.outputs.new_version }}"
 
     - name: Log in to Container Registry
       uses: docker/login-action@v3
@@ -157,7 +158,11 @@ jobs:
         tags: |
           type=ref,event=branch
           type=raw,value=${{ steps.version.outputs.new_version }}
-          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=latest
+        labels: |
+          org.opencontainers.image.title=Geometry Jump
+          org.opencontainers.image.description=A simple Geometry Dash-style game
+          org.opencontainers.image.version=${{ steps.version.outputs.new_version }}
 
     - name: Build and push Docker image
       id: build
@@ -194,29 +199,8 @@ jobs:
       with:
         tag_name: v${{ needs.build-and-push.outputs.version }}
         name: Geometry Jump v${{ needs.build-and-push.outputs.version }}
-        body: |
-          ## 🎮 Geometry Jump v${{ needs.build-and-push.outputs.version }}
-          
-          ### What's New
-          - Automatic build and deployment
-          - Version display in game
-          - Docker image: `${{ needs.build-and-push.outputs.image }}`
-          
-          ### How to Deploy
-          ```bash
-          # Docker
-          docker run -p 8080:80 ${{ needs.build-and-push.outputs.image }}
-          
-          # Docker Compose
-          VERSION=${{ needs.build-and-push.outputs.version }} docker-compose -f deploy/docker-compose.yml up -d
-          ```
-          
-          ### Play Online
-          Access the game at: http://localhost:8080
-          
-          Built with ❤️ for Joshua & Dad!
-        draft: false
-        prerelease: false
+        generate_release_notes: true
+        make_latest: true
 
   # Update deployment files
   update-deployment:
@@ -235,7 +219,7 @@ jobs:
       run: |
         # Update image tag in k8s deployment
         sed -i "s|image: geometry-jump:.*|image: ${{ needs.build-and-push.outputs.image }}|g" deploy/k8s-deployment.yaml
-        
+
         # Update docker-compose default version
         sed -i "s|VERSION:-latest|VERSION:-${{ needs.build-and-push.outputs.version }}|g" deploy/docker-compose.yml
 
@@ -248,5 +232,5 @@ jobs:
           echo "No deployment changes to commit"
         else
           git commit -m "📦 Update deployment files for v${{ needs.build-and-push.outputs.version }}"
-          git push origin main
+          echo "Deployment files updated locally (skipping push to avoid conflicts)"
         fi

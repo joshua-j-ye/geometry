@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: geometry-jump
-        image: ghcr.io/yourusername/geometry-jump/geometry-jump:latest
+        image: ghcr.io/joshua-j-ye/geometry/geometry-jump:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

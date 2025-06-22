@@ -1,7 +1,7 @@
 # Geometry Jump 🎮
 
-[![Build and Deploy](https://github.com/yourusername/geometry-jump/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/yourusername/geometry-jump/actions/workflows/build-and-deploy.yml)
-[![Docker Image](https://ghcr.io/yourusername/geometry-jump/geometry-jump:latest)](https://ghcr.io/yourusername/geometry-jump/geometry-jump)
+[![Build and Deploy](https://github.com/joshua-j-ye/geometry/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/joshua-j-ye/geometry/actions/workflows/build-and-deploy.yml)
+[![Docker Image](https://ghcr.io/joshua-j-ye/geometry/geometry-jump:latest)](https://ghcr.io/joshua-j-ye/geometry/geometry-jump)
 
 A simple and fun Geometry Dash-style game built with HTML, CSS, and JavaScript for Joshua and Dad!
 
@@ -137,10 +137,10 @@ Images are automatically built and published to GitHub Container Registry:
 
 ```bash
 # Pull latest
-docker pull ghcr.io/yourusername/geometry-jump/geometry-jump:latest
+docker pull ghcr.io/joshua-j-ye/geometry/geometry-jump:latest
 
 # Run specific version
-docker run -p 8080:80 ghcr.io/yourusername/geometry-jump/geometry-jump:v1.0.1
+docker run -p 8080:80 ghcr.io/joshua-j-ye/geometry/geometry-jump:v1.0.1
 ```
 
 ## 📊 Monitoring
@@ -190,7 +190,7 @@ MIT License - Built with ❤️ for Joshua & Dad
 - **Documentation**: [docs/README.md](docs/README.md)
 - **Deployment Guide**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - **Development Log**: [docs/DEVELOPMENT_LOG.md](docs/DEVELOPMENT_LOG.md)
-- **Container Registry**: [GitHub Packages](https://ghcr.io/yourusername/geometry-jump)
+- **Container Registry**: [GitHub Packages](https://ghcr.io/joshua-j-ye/geometry)
 
 ---
 
