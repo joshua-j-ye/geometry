@@ -6,9 +6,9 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile
       args:
-        VERSION: ${VERSION:-latest}
+        VERSION: ${VERSION:-1.0.2}
         CACHEBUST: ${CACHEBUST:-1}
-    image: geometry-jump:${VERSION:-latest}
+    image: geometry-jump:${VERSION:-1.0.2}
     container_name: geometry-jump-game
     restart: unless-stopped
     ports:
