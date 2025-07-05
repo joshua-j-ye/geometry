@@ -16,7 +16,7 @@ start: ## Start development server
 
 test: ## Run basic tests
 	@echo "Testing game files..."
-	@test -f src/index.html && echo "✓ HTML file exists"
+	@test -f index.html && echo "✓ HTML file exists"
 	@test -f src/style.css && echo "✓ CSS file exists"
 	@test -f src/game.js && echo "✓ JS file exists"
 	@node -c src/game.js && echo "✓ JavaScript syntax OK"
@@ -91,23 +91,23 @@ docker-version: ## Deploy with specific version (usage: make docker-version VERS
 open: ## Open game in browser
 	@echo "🎮 Opening Geometry Jump..."
 	@if command -v open >/dev/null 2>&1; then \
-		open src/index.html; \
+		open index.html; \
 	elif command -v xdg-open >/dev/null 2>&1; then \
-		xdg-open src/index.html; \
+		xdg-open index.html; \
 	else \
-		echo "Please open src/index.html in your browser"; \
+		echo "Please open index.html in your browser"; \
 	fi
 
 serve: ## Serve game locally (simple Python server)
 	@echo "🌐 Serving game at http://localhost:8000"
-	@cd src && python3 -m http.server 8000
+	@python3 -m http.server 8000
 
 lint: ## Basic linting
 	@echo "🔍 Checking code quality..."
 	@if command -v htmlhint >/dev/null 2>&1; then \
-		htmlhint src/index.html; \
+		htmlhint index.html; \
 	else \
-		echo "HTML file exists: $$(test -f src/index.html && echo 'OK' || echo 'MISSING')"; \
+		echo "HTML file exists: $$(test -f index.html && echo 'OK' || echo 'MISSING')"; \
 	fi
 	@node -c src/game.js && echo "✓ JavaScript syntax OK"
 
