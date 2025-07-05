@@ -25,7 +25,7 @@ class GeometryJump {
             isJumping: false,
             jumpPower: -12,
             gravity: 0.6,
-            color: '#FF6B6B'
+            color: '#4ECDC4'
         };
 
         // Ground
@@ -191,7 +191,7 @@ class GeometryJump {
             y: this.ground.y - 30,
             width: 30,
             height: 30,
-            color: '#4ECDC4'
+            color: '#FF6B6B'
         });
     }
 
@@ -294,7 +294,7 @@ class GeometryJump {
         const gradient = this.ctx.createLinearGradient(-this.player.width / 2, -this.player.height / 2,
                                                       this.player.width / 2, this.player.height / 2);
         gradient.addColorStop(0, this.player.color);
-        gradient.addColorStop(1, '#FF8E8E');
+        gradient.addColorStop(1, '#45B7B8');
 
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(-this.player.width / 2, -this.player.height / 2, this.player.width, this.player.height);
@@ -312,7 +312,7 @@ class GeometryJump {
             const gradient = this.ctx.createLinearGradient(obstacle.x, obstacle.y,
                                                           obstacle.x, obstacle.y + obstacle.height);
             gradient.addColorStop(0, obstacle.color);
-            gradient.addColorStop(1, '#45B7B8');
+            gradient.addColorStop(1, '#FF8E8E');
 
             this.ctx.fillStyle = gradient;
 
