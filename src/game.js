@@ -73,13 +73,20 @@ class GeometryJump {
 
     initEventListeners() {
         // Start button
-        document.getElementById('startBtn').addEventListener('click', () => this.startGame());
-        document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
+        document.getElementById('startBtn').addEventListener('click', (e) => {
+            this.ensureMusic();
+            this.startGame();
+        });
+        document.getElementById('restartBtn').addEventListener('click', (e) => {
+            this.ensureMusic();
+            this.restartGame();
+        });
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
+                this.ensureMusic();
                 if (!this.gameStarted) {
                     this.startGame();
                 } else if (this.gameRunning) {
@@ -92,6 +99,7 @@ class GeometryJump {
 
         // Mouse/touch controls
         this.canvas.addEventListener('click', () => {
+            this.ensureMusic();
             if (!this.gameStarted) {
                 this.startGame();
             } else if (this.gameRunning) {
@@ -102,12 +110,33 @@ class GeometryJump {
         // Touch controls for mobile
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            this.ensureMusic();
             if (!this.gameStarted) {
                 this.startGame();
             } else if (this.gameRunning) {
                 this.jump();
             }
         });
+    }
+
+    ensureMusic() {
+        // Only create the Audio object once
+        if (!this.backgroundMusic) {
+            this.backgroundMusic = new Audio('background-music.mp3');
+            this.backgroundMusic.loop = true;
+            this.backgroundMusic.volume = 0.5;
+        }
+        // Play if not already playing
+        if (this.backgroundMusic.paused) {
+            this.backgroundMusic.currentTime = 0;
+            this.backgroundMusic.play().catch((err) => {
+                // Log only once per session
+                if (!this._musicWarned) {
+                    console.warn('Music play error:', err);
+                    this._musicWarned = true;
+                }
+            });
+        }
     }
 
     initClouds() {
@@ -140,6 +169,7 @@ class GeometryJump {
         document.getElementById('startBtn').style.display = 'none';
         document.getElementById('gameOver').style.display = 'none';
         document.getElementById('restartBtn').style.display = 'none';
+        // Music is handled by ensureMusic()
     }
 
     restartGame() {
@@ -259,6 +289,10 @@ class GeometryJump {
 
     gameOver() {
         this.gameRunning = false;
+        // Pause background music if it exists
+        if (this.backgroundMusic && !this.backgroundMusic.paused) {
+            this.backgroundMusic.pause();
+        }
 
         // Check for high score
         if (this.score > this.highScore) {
